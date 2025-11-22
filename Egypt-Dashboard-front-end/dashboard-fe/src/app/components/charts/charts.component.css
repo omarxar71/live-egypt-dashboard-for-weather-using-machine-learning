@@ -1,0 +1,7 @@
+/* This makes the chart fill the "card-body" */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  

@@ -1,0 +1,72 @@
+/* Set the global dark theme for the page.
+  This is the background *behind* the cards.
+*/
+body {
+    background-color: #1a1d21 !important;
+    color: #f0f0f0;
+  }
+  
+  .dashboard-container {
+    padding: 24px;
+  }
+  
+  /* This is the style for all your main dashboard "widgets".
+    It's a dark color, but slightly lighter than the page background.
+  */
+  .dashboard-card {
+    background-color: #272a30;
+    border-radius: 8px;
+    border: 1px solid #3a3f4a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    /* Use flex to make the card body fill the height */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dashboard-card .card-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #30343c;
+    border-bottom: 1px solid #3a3f4a;
+    padding: 1rem 1.25rem;
+  }
+  
+  .dashboard-card .card-body {
+    padding: 1.25rem;
+    flex-grow: 1; /* Allows the body to fill the card */
+    /* This is crucial for the map */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* This is for the small stat boxes at the top.
+  */
+  .stat-card {
+    background-color: #272a30;
+    border-radius: 8px;
+    border: 1px solid #3a3f4a;
+    padding: 1.25rem;
+  }
+  
+  .stat-card-title {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+    margin-bottom: 8px;
+  }
+  
+  .stat-card-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  
+  /* This is the final fix to make your map
+    fill the card it is in.
+  */
+  app-map {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  

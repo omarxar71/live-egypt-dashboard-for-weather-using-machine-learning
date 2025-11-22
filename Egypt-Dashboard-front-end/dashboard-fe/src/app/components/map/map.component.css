@@ -1,0 +1,48 @@
+#map {
+  /* Make the map fill its parent container */
+  width: 100%;
+  flex-grow: 1; /* This is the most important part */
+  
+  /* Give it a minimum height */
+  min-height: 400px; 
+  
+  border-radius: 6px;
+}
+
+/* colorDotsInMap(aqi:any){
+  if (aqi <= 1) return '#4CAF50'; // Green for Good (AQI 1)
+  if (aqi <= 2) return '#FFC107'; // Yellow for Moderate (AQI 2)
+  if (aqi <= 3) return '#FFA500'; // Orange for Unhealthy for Sensitive Groups (AQI 3)
+  if (aqi <= 4) return '#FF8C00'; // Red for Unhealthy (AQI 4)
+  if (aqi <=5) return "#F44336"
+  return '#9C27B0'; // Purple for Very Unhealthy/Hazardous (AQI 5)
+} */
+ .card , .card ul li{
+
+  border: 0;
+ }
+ .card{
+  background-color: #272a31;
+ }
+ .card-header{
+  color: white;
+ }
+ .list-group-item:first-child{
+  background-color:#4CAF50 ;
+ }
+ .list-group-item:nth-child(2){
+background-color: #FFC107;
+ }
+ 
+ .list-group-item:nth-child(3){
+  background-color: #FFA500;
+  }
+ .list-group-item:nth-child(4){
+  background-color: #FF8C00;
+  }
+ .list-group-item:nth-child(5){
+  background-color: #F44336;
+  }
+ .list-group-item:nth-child(6){
+  background-color: #9C27B0';
+  }
