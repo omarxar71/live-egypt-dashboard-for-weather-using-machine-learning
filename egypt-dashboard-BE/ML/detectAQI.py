@@ -7,19 +7,17 @@ from pymongo import MongoClient
 import joblib 
 
 # ----------------------------------------------------------------------
-# 1. CONFIGURATION - UPDATE THESE CONSTANTS
+# 1. CONFIGURATION - CRITICAL UPDATE
 # ----------------------------------------------------------------------
-# The URI and DB_NAME are now set based on your provided context
 MONGO_URI = "mongodb://localhost:27017/dashboard"  
 DB_NAME = "dashboard" 
 COLLECTION_NAME = "datapoints" 
 
-# Target column is correct. The FEATURE_DATA variable will now hold 
-# the name of the *newly created flat column*.
 TARGET_DATA = "aqi"
-FEATURE_KEY_INSIDE_COMPONENTS = "PM2.5" # <--- The key INSIDE the 'components' dict
+# *** FINAL CORRECTION: Using the standard lowercase key 'pm2_5' ***
+FEATURE_KEY_INSIDE_COMPONENTS = "pm2_5" 
 MODEL_FILENAME = 'linear_regression_aqi_model.joblib'
-FLAT_FEATURE_COLUMN = 'pm25_flat' # <-- The new, clean column name
+FLAT_FEATURE_COLUMN = 'pm25_flat' 
 
 # ----------------------------------------------------------------------
 # 2. DATA RETRIEVAL (MongoDB)
@@ -30,7 +28,6 @@ try:
     db = client[DB_NAME]
     collection = db[COLLECTION_NAME]
 
-    # Fetch all documents and load them into a Pandas DataFrame
     cursor = collection.find({})
     data = pd.DataFrame(list(cursor))
     client.close()
@@ -38,32 +35,53 @@ try:
 
 except Exception as e:
     print(f"Error connecting to MongoDB or fetching data: {e}")
-    print("Please check your MONGO_URI, DB_NAME, and COLLECTION_NAME.")
     exit()
 
 # ----------------------------------------------------------------------
-# 3. DATA PREPARATION AND CLEANING (WITH FLATTENING FIX)
+# 3. DATA PREPARATION AND CLEANING (Final Fix: Correct Key + Robust Cleaning)
 # ----------------------------------------------------------------------
 
 # A. FLATTENING FIX: Create a simple column for the nested data.
-# This resolves the KeyError you faced previously.
 print("Flattening nested 'components' column...")
+# This uses the assumed correct key 'pm2_5'
 data[FLAT_FEATURE_COLUMN] = data['components'].apply(
-    # Extract the value using the key 'PM2.5' only if the column content is a dict
     lambda x: x.get(FEATURE_KEY_INSIDE_COMPONENTS) if isinstance(x, dict) else None
 )
 
-# B. Clean Missing Data (CRITICAL for Scikit-learn)
-# Use the new, flat column name for checking NaNs.
-data.dropna(subset=[TARGET_DATA, FLAT_FEATURE_COLUMN], inplace=True) 
-print(f"Data points after cleaning NaNs: {len(data)}")
+# B. DATA TYPE CONVERSION AND IMPUTATION (SOLVES THE NON-NUMERIC ERROR)
 
-# C. Define the Target (y) and Feature (X)
+# 1. CRITICAL CLEANING: Convert the column to string and strip spaces.
+data[FLAT_FEATURE_COLUMN] = data[FLAT_FEATURE_COLUMN].astype(str).str.strip()
+
+# 2. Convert to numeric, coercing any problematic values (like units or empty strings) to NaN.
+data[FLAT_FEATURE_COLUMN] = pd.to_numeric(data[FLAT_FEATURE_COLUMN], errors='coerce')
+
+
+# 3. Calculate the mean 
+pm25_mean = data[FLAT_FEATURE_COLUMN].mean()
+
+# Check if the mean is valid (meaning at least one valid number was found)
+if pd.isna(pm25_mean):
+    print("FATAL ERROR: All PM2.5 values are non-numeric or missing. Cannot calculate mean.")
+    print(f"HINT: Check MongoDB for the exact key inside 'components'. Was it '{FEATURE_KEY_INSIDE_COMPONENTS}'?")
+    exit()
+
+# 4. Fill the remaining NaNs with the calculated mean
+data[FLAT_FEATURE_COLUMN].fillna(pm25_mean, inplace=True)
+print(f"Filled missing PM2.5 values with the mean ({pm25_mean:.2f}).")
+
+
+# C. FINAL CLEANING
+# Now we only drop samples where the target (aqi) might be missing.
+data.dropna(subset=[TARGET_DATA], inplace=True) 
+print(f"Data points available for training: {len(data)}")
+
+
+# D. Define the Target (y) and Feature (X)
 y = data[TARGET_DATA].values
-# Use the new flat column for the feature data
 X = data[FLAT_FEATURE_COLUMN].values.reshape(-1, 1)
 
-# D. Split data for training and testing
+# E. Split data for training and testing
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
@@ -88,7 +106,6 @@ r2 = r2_score(y_test, y_pred)
 # 5. PREDICTION EXAMPLE AND SUMMARY
 # ----------------------------------------------------------------------
 
-# Use the average PM2.5 from the historical data for a single prediction test
 average_pm25 = data[FLAT_FEATURE_COLUMN].mean()
 X_new_single = np.array([[average_pm25]])
 one_prediction = model.predict(X_new_single)
@@ -108,6 +125,5 @@ print("-" * 50)
 # 6. MODEL PERSISTENCE (Saving the Model for FastAPI)
 # ----------------------------------------------------------------------
 
-# Save the trained model to a .joblib file
 joblib.dump(model, MODEL_FILENAME)
 print(f"\nModel successfully saved as: {MODEL_FILENAME}")
